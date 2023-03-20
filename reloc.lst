@@ -1,0 +1,458 @@
+MPASM  5.37                         RELOC.ASM   12-14-2022  11:00:13         PAGE  1
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+Warning[205]: Found directive in column 1. (__CONFIG)
+2007   3FF1           00001 __CONFIG _CP_OFF & _WDT_OFF & _PWRTE_ON & _XT_OSC ;La configuracion de como va ocilar el pic 
+Warning[205]: Found directive in column 1. (LIST)
+                      00002 LIST P=PIC16F84A                                ;El microcontrolador usando es el pic16f84A
+                      00003 
+                      00004         #INCLUDE <P16F84A.INC>          ;BIBLIOTECA
+                      00001         LIST
+                      00002 ; P16F84A.INC  Standard Header File, Version 2.00    Microchip Technology, Inc.
+                      00134         LIST
+                      00005         ORG             0                                       ;La direccion de memoria donde va inicia
+                            r el programa 
+                      00006 ;Se declaran nombres a 4 registros de uso general, estos se encontranran en la posicion de memoria de 0x
+                            0C hasta 0x68 hexadecimal
+                      00007         CBLOCK 0x0C             ;Se abre el bloque de registros que vamos a ocupar y nombrar iniciando d
+                            esde la posicion 0x0C
+  0000000C            00008                 reg1            ;0x0C Este registro nos servira para colocarle un numero que nos servira
+                             para la realizacion de un ciclo anidado que permitira mostrar cierto tiempo los numeros
+  0000000D            00009                 reg2            ;0x0D Al igual que el anterior nos servira para colocar cierta cantidad 
+                            para un ciclo anidado 
+  0000000E            00010                 reg3            ;0x0E Y este tambien servira para el ciclo anidado
+  0000000F            00011                 min1            ;0x0F Esta variable nos servira para guardar los valores del digito 1 de
+                             los minutos del reloj
+  00000010            00012                 min2            ;0x10 Esta segunda variable llamada min2, nos servira para guardar el va
+                            lor del digito 2 de los minutos del reloj
+  00000011            00013                 hor1            ;0x11 Esta tercera variable llamada hor1, nos servira para guardar el va
+                            lor del digito 3 que pertenece a la hora 1 al 9 del reloj
+  00000012            00014                 hor2            ;0x12 Esta cuarta variable llamada hor2, nos permitira guardar el cuarto
+                             y ultimo digito del reloj que pertence al segundo digito de las horas
+  00000013            00015                 dos                     ;0x13 Apartir de esta variable las ocuparemos para condicionar l
+                            os saltos para reiniciar el numero cuando llegue a cierto valor limite del reloj
+  00000014            00016                 cuatro          ;0x14 Esta variable se utilizara para mandar el reseteo cuando llegue a 
+                            24 horas el reloj el cual ya habra pasado un dia 
+  00000015            00017                 seis            ;0x15 Esta variable se utilizara para cuando los 2 digitos de los minuto
+                            s lleguen a 60 se resete ya que ya habra pasado una hora
+  00000016            00018                 diez            ;0x16 Esta ultima variable sera utilizada para cuando uno de los digitos
+                             llegue a 9 y haga el cambio a 10 para vuelva a iniciar desde 0
+                      00019         ENDC                    ;Termina la declaracion de registros de CBLOCK
+                      00020 
+                      00021 ;Configuracion de puertos
+0000   1683           00022         bsf             STATUS, RP0             ;Acceso al banco 1 de la memoria de datos.
+0001   3001           00023         movlw   b'00000001'     ;Los este numero en binario y lo movemos al registro de trabajo w
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0002   0085           00024         movwf   TRISA                   ;Configura el Puerto A con una entrada ya que sera la que nos se
+                            rvira para iniciar el reloj.
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0003   0186           00025         clrf    TRISB                   ;Configura el Puerto B como salidas.
+0004   1283           00026         bcf             STATUS, RP0             ;Acceso al banco 0 de la memoria de datos.
+                      00027 ;Programa principal:
+                      00028 
+0005                  00029 inicio
+                      00030         ;minutos1
+0005   3000           00031                 movlw   0x00            ;Moveremos un cero hexadecimal al registro de trebajo
+0006   008F           00032                 movwf   min1            ;Y este lo moveremos al registro min1 declarado en el cblock
+MPASM  5.37                         RELOC.ASM   12-14-2022  11:00:13         PAGE  2
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00033         ;minutos2
+0007   3000           00034                 movlw   0x00            ;Moveremos un cero hexadecimal al registro de trebajo
+0008   0090           00035                 movwf   min2            ;Y este lo moveremos al registro min2 declarado en el cblock
+                      00036         
+                      00037         ;hora1
+0009   3000           00038                 movlw   0x00            ;Moveremos un cero hexadecimal al registro de trebajo
+000A   0091           00039                 movwf   hor1            ;Y este lo moveremos al registro min1 declarado en el cblock
+                      00040         
+                      00041         ;hora2
+000B   3000           00042                 movlw   0x00            ;Moveremos un cero hexadecimal al registro de trebajo
+000C   0092           00043                 movwf   hor2            ;Y este lo moveremos al registro min1 declarado en el cblock
+                      00044                 
+                      00045                 
+000D   30F0           00046                 movlw   b'11110000'             ;Mandaremos Este numero al puerto b para resetear cualqu
+                            ier inconceniente en los pines del puerto b
+000E   0086           00047                 movwf   PORTB                   ;Movemos dicho numero del registro de trabajo al puerto 
+                            B
+                      00048 
+                      00049 ;Apartir de este punto hasta la linea btfss PORTA,0 - Esto mandara a encerder con un cero todos los cato
+                            dos con un cero hasta que mandemos la señal de avanzar.
+000F   080F           00050                 movf    min1,w                  ;Por lo que el valor que tenga uno pasara al registro de
+                             trabajo 
+0010   390F           00051                 andlw   b'00001111'             ;Verificamos que los numeros que se mande sean solamente
+                             del 0 al 9 con los primero 4 bits en binario
+0011   2???           00052                 call    tabla1                  ;Mandamos a llamar a la tabla 1
+0012   0086           00053                 movwf   PORTB                   ;Mandamos el numero que nos regrese la tabla 1 al portB
+                      00054                 
+                      00055                 ;Repetimos el proceso con los demas catodos del reloj solo que cada una tendra su corres
+                            pondiente tabla
+0013   0810           00056                 movf    min2,w
+0014   390F           00057                 andlw   b'00001111'             
+0015   2???           00058                 call    tabla2
+0016   0086           00059                 movwf   PORTB
+                      00060         
+0017   0811           00061                 movf    hor1,w
+0018   390F           00062                 andlw   b'00001111'             
+0019   2???           00063                 call    tabla3
+001A   0086           00064                 movwf   PORTB
+                      00065         
+001B   0812           00066                 movf    hor2,w
+001C   390F           00067                 andlw   b'00001111'             
+001D   2???           00068                 call    tabla4
+001E   0086           00069                 movwf   PORTB
+                      00070         
+                      00071         
+001F   1C05           00072         btfss   PORTA,0                         ;Esta accion lo que hara es verificar si se ha mandado u
+                            na señal en el puerto 0 del regitro A 
+0020   2???           00073         goto    sinpresionar            ;En caso de que sea distinto de 0 se ejecutara el salto a la eti
+                            queta sinpresionar
+0021   2???           00074         goto    conteo1                         ;En caso de que se mande la señal se saltara la linea an
+                            terio y seguira en conteo1
+                      00075 
+0022                  00076 conteo1
+MPASM  5.37                         RELOC.ASM   12-14-2022  11:00:13         PAGE  3
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0022   3005           00077         movlw   0x5                     ;W se carga con el numero 74h(comienza la llamada)
+0023   008E           00078         movwf   reg3                    ;Se pasa a reg3
+0024                  00079 externo
+0024   3005           00080         movlw   0x5                     ;W se carga con el numero 73h
+0025   008D           00081         movwf   reg2                    ;Se pasa a reg2
+0026                  00082 mitad
+0026   3005           00083         movlw   0x5                     ;W se carga con el numero 74h
+0027   008C           00084         movwf   reg1                    ;Se pasa a reg1
+                      00085 ;Entre los tres numeros anteriores se forma un minuto en tiempo real.
+0028                  00086 interno
+                      00087 
+                      00088 ;En estas lineas a continuacion se repetira el mismo proceso que arriba solo que esta vez no esta condic
+                            ioandado ya que apartir de coneteo1 se repetira el proceso cada 60 segundos.
+0028   080F           00089                 movf    min1,w                  ;Por lo que el valor que tenga uno pasara al registro de
+                             trabajo 
+0029   390F           00090                 andlw   b'00001111'             ;Verificamos que los numeros que se mande sean solamente
+                             del 0 al 9 con los primero 4 bits en binario
+002A   2???           00091                 call    tabla1                  ;Mandamos a llamar a la tabla 1
+002B   0086           00092                 movwf   PORTB                   ;Mandamos el numero que nos regrese la tabla 1 al portB
+                      00093                 
+002C   0810           00094                 movf    min2,w
+002D   390F           00095                 andlw   b'00001111'             
+002E   2???           00096                 call    tabla2
+002F   0086           00097                 movwf   PORTB
+                      00098         
+0030   0811           00099                 movf    hor1,w
+0031   390F           00100                 andlw   b'00001111'             
+0032   2???           00101                 call    tabla3
+0033   0086           00102                 movwf   PORTB
+                      00103         
+0034   0812           00104                 movf    hor2,w
+0035   390F           00105                 andlw   b'00001111'             
+0036   2???           00106                 call    tabla4
+0037   0086           00107                 movwf   PORTB
+                      00108                 
+0038   1C05           00109                 btfss   PORTA,0                 ;Solo que esta linea de codigo solo servira en caso de q
+                            ue se dese para el reloj en cierta hora.
+0039   2???           00110                 goto    interno                 ;En caso de que sea distinto de 0 se ejecutara el salto 
+                            a la etiqueta primero 
+                      00111                 
+003A   0B8C           00112         decfsz  reg1,1                  ;Le resta una unidad a reg1
+003B   2???           00113         goto    interno                 ;Sigue decrementando hasta que reg1 llegue a 0
+003C   0B8D           00114         decfsz  reg2,1                  ;Le resta una unidad a reg2
+003D   2???           00115         goto    mitad                   ;Sigue decrementando hasta que reg2 llegue a 0
+003E   0B8E           00116         decfsz  reg3,1                  ;Le resta una unidad a reg3
+003F   2???           00117         goto    externo                 ;Sigue decrementando hasta que reg3 llegue a 0
+                      00118         
+                      00119 ;Apartir de aqui se daran los incrementos en los digitos y las condiciones para reiniciar dicho digito 
+0040   300B           00120         movlw   d'11'           ;Declaraemos un 11 decimal y lo moveremos al registro de treabajo
+0041   0096           00121         movwf   diez            ;Y el 11 anteriormente declarado lo moveremos a la variable diez, que no
+                            s servira para comparar cuando un numero llegue a 10
+Message[305]: Using default destination of 1 (file).
+0042   0A8F           00122         incf    min1            ;Hacemos el incremento en 1 en min1 
+MPASM  5.37                         RELOC.ASM   12-14-2022  11:00:13         PAGE  4
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0043   080F           00123         movfw   min1            ;Copiamos la variable min1 al regitro de treabajo
+Message[305]: Using default destination of 1 (file).
+0044   0296           00124         subwf   diez            ;restamos lo que hay en el regitro de treabajo con diez y dicho resultad
+                            o lo guardaremos en diez
+0045   0B96           00125         decfsz  diez,1          ;Si el resultado de dicha resta fue uno quiere decir que min1 ya llego a
+                             10 por lo que al decrementar la variable diez nos dara un resultado de 0 entonces saltara la li
+0046   2???           00126         goto    conteo1         ;En caso de que min9 sea menora a 10 mandara dicho numero a visualizarse
+                             al catodo
+0047   2???           00127         goto    cambios1        ;En caso de que min1 llegue con un valor de 10 realizara un salto a la r
+                            utina cambios 1, el cual se encargara de reiniciar la variable min1 con un cero y hara el increm
+                      00128                                                 ;variable min2
+                      00129 ;Subrutina para incrementar min2, reiniciar min1, condicionar el cambio para hor1
+0048                  00130 cambios1
+0048   018F           00131                 clrf    min1    ;Limpiamos lo que tenga la variable min1
+0049   3007           00132                 movlw   d'7'    ;Mandamos un 7 decimal al regitro de treajo que nos servira para ver cua
+                            ndo el catodo 2 llegue a 6 se reinicie ya que ya habra pasado 1 hora 
+004A   0095           00133                 movwf   seis    ;Mandamos el 7 del registro de trabajo a la variable seis para la resta 
+                            que nos determinara si min2 llego a 6
+Message[305]: Using default destination of 1 (file).
+004B   0A90           00134                 incf    min2    ;Hacemos el incremento en min2
+004C   0810           00135                 movfw   min2    ;Movemos y copiamos lo que tenga min2 al registro de trabajo 
+Message[305]: Using default destination of 1 (file).
+004D   0295           00136                 subwf   seis    ;Realizamos la resta de lo que tenga el registro de trabajo con el valor
+                             que tenga seis, y el resultado de dicha resta se guardara en seis
+004E   0B95           00137                 decfsz  seis,1  ;Si el decremento es 0 realizara un salto al goto cambios2, en caso de s
+                            er 1 o mayor, no realizara el salto, por lo que volvera a conteo1
+004F   2???           00138                 goto    conteo1 ;Salto a conteo1
+0050   2???           00139                 goto    cambios2        ;Salto a cambios2
+                      00140 ;En caso de que min2 llegue a 6 se realizara la siguiente subrutina que sera el cambios2, ya que esta se
+                             encargara de incrementar la hora 1 en 1, en caso de que los minutos lleguen a 60
+0051                  00141 cambios2
+0051   0190           00142                 clrf    min2    ;Por lo que min2 se limpiara
+0052   300B           00143                 movlw   d'11'   ;Se declara un 11 en el regitro de trabajo y se guardara en el registro 
+                            de trabajo
+0053   0096           00144                 movwf   diez    ;Y lo que tenga el registro de trabajo se guardara en la variable diez
+                      00145                 
+                      00146         ;Se repite el proceso anterior solo que con el valor de 4 y la variable cuatro
+0054   3004           00147                 movlw   d'4'
+0055   0094           00148                 movwf   cuatro
+                      00149         ;Se repite el proceso anterior solo que con la variable dos y se le asignara un valor de 3      
+0056   3003           00150                 movlw   d'3'
+0057   0093           00151                 movwf   dos
+                      00152         ;Los pasos anteriores nos serviran para condicionar 3 cosas, la primera cuando el catodo de la h
+                            ora 1 llegue a 10, ya que abarcara 2 digitos, y cuando haya pasado las 20 horas ya que apartir d
+                      00153         ;ya solo seria cuatro, y de hay hacer un reseteo total, ya que habra pasado un dia.
+0058   0812           00154                 movfw   hor2    ;Moveremos la hora2 al registro de trabajo
+Message[305]: Using default destination of 1 (file).
+0059   0293           00155                 subwf   dos             ;Restamos el registro de trabajo con el valor de dos y lo guarda
+                            mos en dos
+005A   0B93           00156                 decfsz  dos,1   ;Si dos lo decrementamos en 1 y el resultado es 0, detectara que ya esta
+                            n en las horas 20, si no mandara a la subrutina continuar el cual trabajara de manera normal.
+005B   2???           00157                 goto    continuar       ;Salta a continuar
+005C   2???           00158                 goto    detectar        ;Salra a detectar
+MPASM  5.37                         RELOC.ASM   12-14-2022  11:00:13         PAGE  5
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00159 ;En caso de que este el reloj en las 20 horas se ejecutara la siguiente subrutina que se encargara de ve
+                            r si se ha llegado a las 24 horas, para resetear tdoas las variables
+005D                  00160 detectar
+005D   0811           00161                 movfw   hor1            ;movemos lo que tenga hor1 al registro de trabajo
+Message[305]: Using default destination of 1 (file).
+005E   0294           00162                 subwf   cuatro          ;Restamos lo que tenga el registro de trabajo con cuatro y se gu
+                            ardara en cuatro
+005F   0B94           00163                 decfsz  cuatro,1        ;Si lo que tenga cuatro el decremento es 0, detectara que ya son
+                             24 horas y mandara a llamar a la subrutina reseteo que limpiara las variables min1,min2, hor1 y
+0060   2???           00164                 goto    continuar       ;Salta a continuar en caso de que no se haya llegado a al hora 2
+                            4
+0061   2???           00165                 goto    reseteo         ;Sino reseteara las variables.
+                      00166 ;Esta subrutina se encargara de incrementar el catodo 1 de las horas hasta llegar a nueve 
+0062                  00167 continuar
+Message[305]: Using default destination of 1 (file).
+0062   0A91           00168                 incf    hor1            ;Incrementa a 1 hor1
+0063   0811           00169                 movfw   hor1            ;Movemos lo que tenga hor1 al registro de trabajo
+Message[305]: Using default destination of 1 (file).
+0064   0296           00170                 subwf   diez            ;Restamos el registro de trabajo con diez, y el resultado se gua
+                            rda en 10 
+0065   0B96           00171                 decfsz  diez,1          ;En caso de que el decremento de la variable diez sea cero pasar
+                            a a la subrutina cambios 3 ya que ya se habra llegado a la hora 10, en caso de que no se pasara 
+0066   2???           00172                 goto    conteo1         ;Salto a conteo1
+0067   2???           00173                 goto    cambios3        ;Salto a cambios 3
+                      00174 ;Esta subrutina se ejecutara cuando se llegue a la hora diez para en el ultimo catodo muestre el 1 de la
+                            s horas 10 y el 2 de las horas 20
+0068                  00175 cambios3
+0068   0191           00176                 clrf    hor1            ;Limpiamos la variable hor1
+0069   3004           00177                 movlw   d'4'            ;Declaramos un 4 decimal en el registro de trabajo
+006A   0093           00178                 movwf   dos                     ;Lo movemos a la variable dos
+Message[305]: Using default destination of 1 (file).
+006B   0A92           00179                 incf    hor2            ;Incrementamos la hor2 en 1 
+006C   0812           00180                 movfw   hor2            ;Lo que tenga hor1 lo movemos al registro de trabajo 
+Message[305]: Using default destination of 1 (file).
+006D   0293           00181                 subwf   dos                     ;Restamos lo que tenga el registro de trabajo menos la v
+                            ariable dos, y se guardara en 2
+006E   0B93           00182                 decfsz  dos,1           ;En caso de que el decremento de dos tenga como resultado 0 pasa
+                            ra a cambios 4 sino a conteo1
+006F   2???           00183                 goto    conteo1         ;Salto conteo1
+0070   2???           00184                 goto    cambios4        ;Salto cambios4
+                      00185 ;Esta subrutina solo se dara cuando haya pasado arriba de las 24 horas
+0071                  00186 cambios4
+0071   0192           00187                 clrf    hor2
+0072   2???           00188                 goto    conteo1
+                      00189 ;Y se aplicara reseteo cuando pase de 34 horas y hara un salto a conteo 1 para iniciar todo de nuevo
+0073                  00190 reseteo
+0073   018F           00191                 clrf    min1
+0074   0190           00192                 clrf    min2
+0075   0191           00193                 clrf    hor1
+0076   0192           00194                 clrf    hor2
+0077   2???           00195                 goto    conteo1
+                      00196         ;cuando lleguea a nueve min1
+                      00197 ;Tablas con los datos que se mostraran en los catodos corresponidentes
+MPASM  5.37                         RELOC.ASM   12-14-2022  11:00:13         PAGE  6
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0078                  00198 tabla1
+0078   0782           00199         addwf   PCL, F                  ;Suma PCL + W para obtener el valor de la tabla
+                      00200         
+0079   3410           00201         retlw   b'00010000'             ;Valor de slaida para la entrada 0000 = 0
+007A   3411           00202         retlw   b'00010001'             ;Valor de slaida para la entrada 0001 = 1
+007B   3412           00203         retlw   b'00010010'             ;Valor de slaida para la entrada 0010 = 2
+007C   3413           00204         retlw   b'00010011'             ;Valor de slaida para la entrada 0011 = 3
+007D   3414           00205         retlw   b'00010100'             ;Valor de slaida para la entrada 0100 = 4
+007E   3415           00206         retlw   b'00010101'             ;Valor de slaida para la entrada 0101 = 5
+007F   3416           00207         retlw   b'00010110'             ;Valor de slaida para la entrada 0110 = 6
+0080   3417           00208         retlw   b'00010111'             ;Valor de slaida para la entrada 0111 = 7
+0081   3418           00209         retlw   b'00011000'             ;Valor de slaida para la entrada 1000 = 8
+0082   3419           00210         retlw   b'00011001'             ;Valor de slaida para la entrada 1001 = 9
+                      00211 
+0083                  00212 tabla2
+0083   0782           00213         addwf   PCL, F                  ;Suma PCL + W para obtener el valor de la tabla
+                      00214         
+0084   3420           00215         retlw   b'00100000'             ;Valor de slaida para la entrada 0000 = 0
+0085   3421           00216         retlw   b'00100001'             ;Valor de slaida para la entrada 0001 = 1
+0086   3422           00217         retlw   b'00100010'             ;Valor de slaida para la entrada 0010 = 2
+0087   3423           00218         retlw   b'00100011'             ;Valor de slaida para la entrada 0011 = 3
+0088   3424           00219         retlw   b'00100100'             ;Valor de slaida para la entrada 0100 = 4
+0089   3425           00220         retlw   b'00100101'             ;Valor de slaida para la entrada 0101 = 5
+                      00221 
+008A                  00222 tabla3
+008A   0782           00223         addwf   PCL, F                  ;Suma PCL + W para obtener el valor de la tabla
+                      00224         
+008B   3440           00225         retlw   b'01000000'             ;Valor de slaida para la entrada 0000 = 0
+008C   3441           00226         retlw   b'01000001'             ;Valor de slaida para la entrada 0001 = 1
+008D   3442           00227         retlw   b'01000010'             ;Valor de slaida para la entrada 0010 = 2
+008E   3443           00228         retlw   b'01000011'             ;Valor de slaida para la entrada 0011 = 3
+008F   3444           00229         retlw   b'01000100'             ;Valor de slaida para la entrada 0100 = 4
+0090   3445           00230         retlw   b'01000101'             ;Valor de slaida para la entrada 0101 = 5
+0091   3446           00231         retlw   b'01000110'             ;Valor de slaida para la entrada 0110 = 6
+0092   3447           00232         retlw   b'01000111'             ;Valor de slaida para la entrada 0111 = 7
+0093   3448           00233         retlw   b'01001000'             ;Valor de slaida para la entrada 1000 = 8
+0094   3449           00234         retlw   b'01001001'             ;Valor de slaida para la entrada 1001 = 9
+0095                  00235 tabla4
+0095   0782           00236         addwf   PCL, F                  ;Suma PCL + W para obtener el valor de la tabla
+                      00237         
+0096   3480           00238         retlw   b'10000000'             ;Valor de slaida para la entrada 0000 = 0
+0097   3481           00239         retlw   b'10000001'             ;Valor de slaida para la entrada 0001 = 1
+0098   3482           00240         retlw   b'10000010'             ;Valor de slaida para la entrada 0010 = 2
+                      00241 
+                      00242 
+                      00243         
+0099                  00244 sinpresionar
+0099   2???           00245         goto inicio ;Realizara un salto a inicio
+                      00246 
+                      00247 
+                      00248 
+3FF1                  00249         END                             ;Fin del código, esta directiva es obligatoria
+MPASM  5.37                         RELOC.ASM   12-14-2022  11:00:13         PAGE  7
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+C                                 00000000
+DC                                00000001
+EEADR                             00000009
+EECON1                            00000088
+EECON2                            00000089
+EEDATA                            00000008
+EEIE                              00000006
+EEIF                              00000004
+F                                 00000001
+FSR                               00000004
+GIE                               00000007
+INDF                              00000000
+INTCON                            0000000B
+INTE                              00000004
+INTEDG                            00000006
+INTF                              00000001
+IRP                               00000007
+NOT_PD                            00000003
+NOT_RBPU                          00000007
+NOT_TO                            00000004
+OPTION_REG                        00000081
+PCL                               00000002
+PCLATH                            0000000A
+PORTA                             00000005
+PORTB                             00000006
+PS0                               00000000
+PS1                               00000001
+PS2                               00000002
+PSA                               00000003
+RBIE                              00000003
+RBIF                              00000000
+RD                                00000000
+RP0                               00000005
+RP1                               00000006
+STATUS                            00000003
+T0CS                              00000005
+T0IE                              00000005
+T0IF                              00000002
+T0SE                              00000004
+TMR0                              00000001
+TRISA                             00000085
+TRISB                             00000086
+W                                 00000000
+WR                                00000001
+WREN                              00000002
+WRERR                             00000003
+Z                                 00000002
+_CP_OFF                           00003FFF
+_CP_ON                            0000000F
+_HS_OSC                           00003FFE
+_LP_OSC                           00003FFC
+_PWRTE_OFF                        00003FFF
+_PWRTE_ON                         00003FF7
+MPASM  5.37                         RELOC.ASM   12-14-2022  11:00:13         PAGE  8
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+_RC_OSC                           00003FFF
+_WDT_OFF                          00003FFB
+_WDT_ON                           00003FFF
+_XT_OSC                           00003FFD
+__16F84A                          00000001
+__DEBUG                           1
+cambios1                          00000048
+cambios2                          00000051
+cambios3                          00000068
+cambios4                          00000071
+conteo1                           00000022
+continuar                         00000062
+cuatro                            00000014
+detectar                          0000005D
+diez                              00000016
+dos                               00000013
+externo                           00000024
+hor1                              00000011
+hor2                              00000012
+inicio                            00000005
+interno                           00000028
+min1                              0000000F
+min2                              00000010
+mitad                             00000026
+reg1                              0000000C
+reg2                              0000000D
+reg3                              0000000E
+reseteo                           00000073
+seis                              00000015
+sinpresionar                      00000099
+tabla1                            00000078
+tabla2                            00000083
+tabla3                            0000008A
+tabla4                            00000095
+
+Errors   :     0
+Warnings :     2 reported,     0 suppressed
+Messages :    12 reported,     0 suppressed
+
+

@@ -1,0 +1,14 @@
+Warning[205] C:\USERS\OMARA\DOCUMENTS\TRABAJOSEXTRAS\RELOC\RELOC.ASM 1 : Found directive in column 1. (__CONFIG)
+Warning[205] C:\USERS\OMARA\DOCUMENTS\TRABAJOSEXTRAS\RELOC\RELOC.ASM 2 : Found directive in column 1. (LIST)
+Message[302] C:\USERS\OMARA\DOCUMENTS\TRABAJOSEXTRAS\RELOC\RELOC.ASM 24 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Message[302] C:\USERS\OMARA\DOCUMENTS\TRABAJOSEXTRAS\RELOC\RELOC.ASM 25 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Message[305] C:\USERS\OMARA\DOCUMENTS\TRABAJOSEXTRAS\RELOC\RELOC.ASM 122 : Using default destination of 1 (file).
+Message[305] C:\USERS\OMARA\DOCUMENTS\TRABAJOSEXTRAS\RELOC\RELOC.ASM 124 : Using default destination of 1 (file).
+Message[305] C:\USERS\OMARA\DOCUMENTS\TRABAJOSEXTRAS\RELOC\RELOC.ASM 134 : Using default destination of 1 (file).
+Message[305] C:\USERS\OMARA\DOCUMENTS\TRABAJOSEXTRAS\RELOC\RELOC.ASM 136 : Using default destination of 1 (file).
+Message[305] C:\USERS\OMARA\DOCUMENTS\TRABAJOSEXTRAS\RELOC\RELOC.ASM 155 : Using default destination of 1 (file).
+Message[305] C:\USERS\OMARA\DOCUMENTS\TRABAJOSEXTRAS\RELOC\RELOC.ASM 162 : Using default destination of 1 (file).
+Message[305] C:\USERS\OMARA\DOCUMENTS\TRABAJOSEXTRAS\RELOC\RELOC.ASM 168 : Using default destination of 1 (file).
+Message[305] C:\USERS\OMARA\DOCUMENTS\TRABAJOSEXTRAS\RELOC\RELOC.ASM 170 : Using default destination of 1 (file).
+Message[305] C:\USERS\OMARA\DOCUMENTS\TRABAJOSEXTRAS\RELOC\RELOC.ASM 179 : Using default destination of 1 (file).
+Message[305] C:\USERS\OMARA\DOCUMENTS\TRABAJOSEXTRAS\RELOC\RELOC.ASM 181 : Using default destination of 1 (file).
